@@ -405,92 +405,6 @@ colSums(is.na(SampleDat_WL)) # missing values only in PRM columns - as expected
 SampleDat_WL <- SampleDat_WL[, -c(14)]
 SampleDat_WL <- SampleDat_WL[, -c(17:19)]
 
-# # > create hourly ave WL data -----
-# # - subset to Source - Imputed
-# # - create hourly Date/Time
-# # - remove cols
-# # - ave WL etc by NRM.Region, Basin, Site.Name, Site.Code, Sampling.Year, WL_Date.Time, Source
-# # add columns back in and bind to Source = Observed
-# str(SampleDat_WL)
-# SampleDat_WL_hourly <- SampleDat_WL %>%
-#   filter(Source == "Imputed") %>%
-#   mutate(
-#     WL.Date.Time.Hour = floor_date(WL.Date.Time, unit = "hour"),
-#     Source = droplevels(Source)
-#   )
-# unique(SampleDat_WL_hourly$Source)
-# 
-# SampleDat_WL_hourly <- SampleDat_WL_hourly[-c(6,8:13,17:18,21)]  # remove uneccesary columns
-# 
-# # create average hourly values
-# str(SampleDat_WL_hourly)
-# SampleDat_WL_summary <- SampleDat_WL_hourly %>%
-#   mutate(
-#     WL_RateOfChange = as.numeric(WL_RateOfChange),
-#     Rel.Month = as.numeric(as.character(Rel.Month)) # convert factor to numeric
-#   ) %>%
-#   group_by(
-#     NRM.Region, Basin, Site.Name, Site.Code,
-#     Sampling.Year, Source, WL.Date.Time.Hour
-#   ) %>%
-#   summarise(
-#     Rel.Day        = mean(Rel.Day, na.rm = TRUE),
-#     Rel.Month      = mean(Rel.Month, na.rm = TRUE),
-#     WaterLevel_m   = max(WaterLevel_m, na.rm = TRUE),
-#     WL_RateOfChange= mean(WL_RateOfChange, na.rm = TRUE),
-#     WL_Cumulative  = max(WL_Cumulative, na.rm = TRUE),
-#     .groups = "drop"
-#   )
-# 
-# # create Observed df
-# SampleDat_WL_Observed <- SampleDat_WL %>%
-#   filter(Source == "Observed") %>%
-#   mutate(Source = droplevels(Source))
-# unique(SampleDat_WL_Observed$Source)
-# 
-# # add columns back in, bind back to Source = Observed
-# names(SampleDat_WL_Observed)
-# names(SampleDat_WL_summary)
-# required_columns <- colnames(SampleDat_WL_Observed)# Get required column names from SampleDat_WL_Observed
-# missing_columns <- setdiff(required_columns, colnames(SampleDat_WL_summary))# Identify which columns are missing in SampleDat_WL_summary
-# SampleDat_WL_summary <- SampleDat_WL_summary %>%
-#   mutate(!!!setNames(rep(list(NA), length(missing_columns)), missing_columns))
-# 
-# # fix Date column
-# str(SampleDat_WL_summary)
-# SampleDat_WL_summary <- SampleDat_WL_summary %>%
-#   mutate(Date = format(WL.Date.Time.Hour, "%d/%m/%Y"))
-# 
-# # remove column 19
-# SampleDat_WL_summary <- SampleDat_WL_summary[-c(19)]  # remove uneccesary columns
-# colnames(SampleDat_WL_summary)[7] <- "WL.Date.Time"
-# 
-# # Subset to Source = "Observed"
-# SampleDat_WL_Observed <- SampleDat_WL %>%
-#   filter(Source == "Observed") %>%
-#   mutate(Source = droplevels(Source))
-# 
-# # Bind the two dataframes together
-# str(SampleDat_WL_summary)
-# str(SampleDat_WL_Observed)
-# 
-# SampleDat_WL_summary_fixed <- SampleDat_WL_summary %>%
-#   mutate(
-#     Rel.Month = as.character(Rel.Month),
-#     WL_RateOfChange = as.character(WL_RateOfChange),
-#     Date = as.character(Date)
-#   )
-# 
-# SampleDat_WL_Observed_fixed <- SampleDat_WL_Observed %>%
-#   mutate(
-#     Rel.Month = as.character(Rel.Month),
-#     WL_RateOfChange = as.character(WL_RateOfChange),
-#     Date = as.character(Date)
-#   )
-# 
-# 
-# SampleDat_WL_combined <- bind_rows(SampleDat_WL_summary_fixed, SampleDat_WL_Observed_fixed)
-
 # Check correlations
 SampleDat_WL_filtered <- SampleDat_WL_combined %>%
   filter(Source != "Imputed") %>%
@@ -524,8 +438,6 @@ library(furrr)
 library(mice)
 SampleDat_WL_reduced <- SampleDat_WL
 
-# > Impute missing WL PAF---------
-# Define variable groups
 # > Impute missing WL PAF---------
 # Define variable groups
 target_vars_WL    <- c("OtherHerb.PRM", "Fungicide.PRM", "Insecticide.PRM", "PSII.PRM", "Total.PRM")
@@ -734,7 +646,7 @@ model_summary_WL <- purrr::map_dfr(names(model_fits_WL), function(site_WL) {
       NA_character_
     }
     
-    # Safely extract R² values
+    #  extract R² values
     r2_marginal_WL <- if (!is.null(r2_obj_WL) && "R2_marginal" %in% names(r2_obj_WL)) r2_obj_WL$R2_marginal else NA_real_
     r2_conditional_WL <- if (!is.null(r2_obj_WL) && "R2_conditional" %in% names(r2_obj_WL)) r2_obj_WL$R2_conditional else NA_real_
     
@@ -852,7 +764,7 @@ library(dplyr)
 library(purrr)
 library(tibble)
 
-# --- (re-use your imputation functions from before) ---
+# --- (re-use imputation functions from before) ---
 imputation_Kernel <- function(x, n) {
   x <- x[!is.na(x)]
   x <- x[x > 0]
@@ -1003,6 +915,7 @@ p <- ggplot(plot_df, aes(x = OtherHerb.PRM, fill = Source, colour = Source)) +
   )
 print(p)
 ggsave("density_OH PRM_KD MI.png", p, width = 15, height = 8, dpi = 300)
+
 
 
 
