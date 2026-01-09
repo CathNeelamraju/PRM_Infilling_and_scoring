@@ -23,7 +23,7 @@ KDDat_final <- read_csv("KDDat_final.csv")
 # calculate wet season averages -------
 setwd("C:/Users/uqcneela/OneDrive - The University of Queensland/General - Sci SEES Res Reef Catchment Science Partnership/Project 3/Catherine Neelamraju/Infilling/MICE_revised test")
 
-# helper to produce wide averaged PAFs (as previously)
+# function to caluclate average wet season PAF
 str(QDat_final)
 str(WLDat_final)
 str(KDDat_final)
@@ -35,7 +35,7 @@ dt_avg_paf_wide <- function(dt) {
   dcast(out, Site.Code + Site.Name + Sampling.Year ~ Group, value.var = "PAF")
 }
 
-# > apply-----
+# > apply function-----
 names(QDat_final)
 names(WLDat_final)
 names(KDDat_final)
@@ -74,9 +74,9 @@ str(wetseason_props)
 
 #> calulate adjusted props
 library(data.table)
-setDT(wetseason_props)
+setDT(wetseason_props) # works better in DT
 
-# numeric safety: ensure Total.PRM and prop cols are numeric
+# ensure Total.PRM and prop cols are numeric
 prop_cols <- names(wetseason_props)[11:14]
 wetseason_props[, (c("Total.PRM", prop_cols)) := lapply(.SD, as.numeric), .SDcols = c("Total.PRM", prop_cols)]
 
@@ -142,7 +142,7 @@ plot_df <- matched_rows %>%
     names_to = "Contribution",
     values_to = "PAF"
   ) %>%
-  # make Sampling.Year a factor to preserve ordering (customize levels if needed)
+  # make Sampling.Year a factor to preserve ordering (customise levels if needed for plotting)
   mutate(Sampling.Year = factor(Sampling.Year, levels = unique(Sampling.Year)))
 
 # fix Group names
@@ -160,7 +160,7 @@ plot_df <- plot_df %>%
 unique(unlist(plot_df$Contribution, use.names = TRUE)) # check    
 
 
-# wrap Site.Name to ~30 characters (adjust width as needed)
+# wrap Site.Name to ~30 characters (adjust width to fit)
 plot_df <- plot_df %>%
   mutate(Site.Name_wrapped = str_wrap(Site.Name, width = 33))
 
@@ -230,7 +230,7 @@ ContPlot <- ggplot(plot_df, aes(x = Sampling.Year, y = PAF, fill = Contribution)
     legend.key.size = unit(5, "mm"),
     legend.background = element_rect(fill = alpha("white", 0.90), colour = "white"),
     legend.key = element_rect(fill = "white", colour = NA),
-    panel.grid.major.x = element_blank(),   # remove vertical major grid lines
+    panel.grid.major.x = element_blank(),   # remove vertical  grid lines
     panel.grid.minor.x = element_blank()
   ) +
   guides(
@@ -389,3 +389,4 @@ HistPlot
 ggsave(filename = "Histogram_obs v inputed.png",
        plot = HistPlot,
        width = 12, height = 8, dpi = 300)
+
