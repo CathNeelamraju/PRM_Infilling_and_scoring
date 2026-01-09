@@ -103,7 +103,7 @@ score_ecological <- function(term, estimate, conf.low, conf.high) {
   )
 }
 
-# --- Wrapper function for scoring workflow ---
+# --- Wrapper function to bring it all togehter ---
 score_models <- function(r2_df, pooled_df, model_type) {
   
   # R² scores
@@ -159,7 +159,7 @@ score_models <- function(r2_df, pooled_df, model_type) {
         total_score >= 0  ~ "Poor (Reject model; not suitable for inference)",
         TRUE ~ NA_character_
       ),
-      # override: force Poor if R2_score == 0
+      # override -->  force Poor if R2_score == 0
       Grade = if_else(R2_score == 0, "Poor (forced by R2 score = 0)", Grade),
       Model.Type = model_type
     )
@@ -227,3 +227,4 @@ combined_scores_df <- bind_rows(final_scores, correlation_data)
 
 # write to file------
 write.csv(combined_scores_df, "Model scores and grading.csv", row.names = FALSE)
+
